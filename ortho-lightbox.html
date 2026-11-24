@@ -1,0 +1,423 @@
+<title>整形外科シャウカステン</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=JetBrains+Mono:wght@400;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
+<style>
+/* Layout: an X-ray lightbox (シャウカステン). The skeleton film is the map; correct answers make bones glow. HUD on top, stages beside the film. */
+:root{
+  --film:#08131d; --film-2:#0e2030; --film-3:#15304a;
+  --bone:#dcefff; --bone-dim:#7d98ad; --glow:#8fd3ff;
+  --amber:#ffb547; --ok:#45e0ae; --ng:#ff6b7c;
+  --line:rgba(143,211,255,.16);
+  --f-display:"Dela Gothic One","Hiragino Sans","Yu Gothic",sans-serif;
+  --f-body:"Zen Kaku Gothic New","Hiragino Sans","Yu Gothic",system-ui,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{background:var(--film);color:var(--bone)}
+body{font-family:var(--f-body);font-size:15px;line-height:1.7;min-height:100%;
+  background:radial-gradient(1200px 600px at 30% -10%,var(--film-3),transparent 60%),var(--film);}
+.wrap{max-width:1080px;margin:0 auto;padding-block:16px 48px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  display:flex;flex-direction:column;gap:18px}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+
+/* HUD */
+.hud{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center}
+.brand{display:flex;flex-direction:column;gap:2px;min-width:0}
+.brand h1{font-family:var(--f-display);font-weight:400;font-size:clamp(20px,4vw,28px);line-height:1.2;margin:0;letter-spacing:.02em;text-wrap:balance}
+.brand small{font-family:var(--f-mono);font-size:11px;color:var(--bone-dim);letter-spacing:.12em;text-transform:uppercase}
+.stats{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.chip{display:flex;align-items:center;gap:6px;padding:6px 10px;border:1px solid var(--line);border-radius:999px;background:rgba(14,32,48,.7);font-size:13px;white-space:nowrap}
+.chip b{font-family:var(--f-mono);font-weight:700}
+.flame{color:var(--amber)}
+.iconbtn{background:none;border:1px solid var(--line);border-radius:999px;padding:6px 10px;font-size:13px}
+.lvl{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;font-size:13px}
+.lvl .title{font-weight:700}
+.bar{height:10px;border-radius:999px;background:var(--film-2);border:1px solid var(--line);overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--glow),var(--amber));transition:width .6s cubic-bezier(.2,.8,.2,1)}
+
+/* Home */
+.home{display:grid;grid-template-columns:minmax(0,380px) minmax(0,1fr);gap:20px;align-items:start}
+.film{position:relative;border:1px solid var(--line);border-radius:6px;background:
+  radial-gradient(closest-side at 50% 45%,rgba(143,211,255,.10),transparent),#050c13;
+  aspect-ratio:1/1.55;max-width:100%;overflow:hidden}
+.film svg{width:100%;height:100%;display:block}
+.overlay{position:absolute;font-family:var(--f-mono);font-size:10px;color:var(--bone-dim);letter-spacing:.06em;line-height:1.4;pointer-events:none}
+.overlay.tl{top:8px;left:10px}.overlay.tr{top:8px;right:10px;text-align:right}
+.overlay.bl{bottom:8px;left:10px}.overlay.br{bottom:8px;right:10px;font-size:22px;font-weight:700;color:var(--bone)}
+.bone{fill:none;stroke:var(--bone-dim);stroke-width:3;stroke-linecap:round;stroke-linejoin:round;opacity:.55}
+.bone.solid{fill:rgba(220,239,255,.06)}
+.hot{cursor:pointer}
+.hot circle.ring{fill:rgba(255,181,71,.08);stroke:var(--amber);stroke-width:1.5;stroke-dasharray:3 3;transform-origin:center;transform-box:fill-box;animation:spin 12s linear infinite}
+.hot circle.core{fill:var(--amber)}
+.hot text{font-family:var(--f-body);font-size:9px;fill:var(--bone);font-weight:700}
+.hot:hover circle.ring,.hot:focus-visible circle.ring{stroke-width:3}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.side{display:flex;flex-direction:column;gap:16px;min-width:0}
+.daily{display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:center;padding:18px;border-radius:10px;
+  background:linear-gradient(135deg,rgba(255,181,71,.14),rgba(143,211,255,.06));border:1px solid rgba(255,181,71,.35)}
+.ring{width:84px;height:84px;position:relative}
+.ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ring .n{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--f-mono);font-weight:700;font-size:18px}
+.daily h2{margin:0 0 4px;font-size:18px;font-family:var(--f-display);font-weight:400}
+.daily p{margin:0 0 10px;color:var(--bone-dim);font-size:13px}
+.cta{background:var(--amber);color:#1b1205;border:0;border-radius:8px;padding:12px 18px;font-weight:700;font-size:15px;box-shadow:0 0 0 0 rgba(255,181,71,.6);animation:pulse 2.4s infinite}
+@keyframes pulse{70%{box-shadow:0 0 0 12px rgba(255,181,71,0)}100%{box-shadow:0 0 0 0 rgba(255,181,71,0)}}
+.sec-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.sec-h h3{margin:0;font-size:13px;letter-spacing:.14em;color:var(--bone-dim);font-weight:500}
+.sec-h button{background:none;border:0;color:var(--glow);font-size:13px;padding:0}
+.stages{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.stage{display:flex;flex-direction:column;gap:6px;text-align:left;padding:12px;border-radius:8px;border:1px solid var(--line);background:rgba(14,32,48,.6);min-width:0}
+.stage:hover{border-color:var(--glow)}
+.stage .nm{font-weight:700;font-size:15px}
+.stage .lt{font-family:var(--f-mono);font-size:10px;color:var(--bone-dim);letter-spacing:.04em;overflow-wrap:anywhere}
+.stage .bar{height:6px}
+.stage .meta{display:flex;justify-content:space-between;font-size:11px;color:var(--bone-dim)}
+.review{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:12px 14px;border-radius:8px;border:1px dashed rgba(255,107,124,.5);font-size:13px}
+.review button{background:none;border:1px solid var(--ng);color:var(--ng);border-radius:6px;padding:6px 10px;font-weight:700}
+.note{font-size:11px;color:var(--bone-dim)}
+
+/* Quiz */
+.quiz{max-width:720px;width:100%;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+.qtop{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:13px;color:var(--bone-dim)}
+.pips{display:flex;gap:4px}
+.pips i{width:22px;height:6px;border-radius:3px;background:var(--film-2);border:1px solid var(--line)}
+.pips i.ok{background:var(--ok);border-color:var(--ok)}
+.pips i.ng{background:var(--ng);border-color:var(--ng)}
+.pips i.now{border-color:var(--amber)}
+.combo{font-family:var(--f-display);color:var(--amber);font-size:15px;min-height:1.4em;transition:transform .2s}
+.combo.pop{transform:scale(1.35)}
+.qcard{position:relative;padding:22px 20px;border-radius:10px;border:1px solid var(--line);background:linear-gradient(180deg,var(--film-2),var(--film))}
+.qcard.rare{border-color:var(--amber);box-shadow:0 0 30px rgba(255,181,71,.25)}
+.tag{display:inline-block;font-family:var(--f-mono);font-size:11px;letter-spacing:.1em;padding:2px 8px;border-radius:4px;background:rgba(143,211,255,.12);color:var(--glow);margin-right:6px}
+.tag.rare{background:var(--amber);color:#1b1205;font-weight:700}
+.tag.retry{background:rgba(255,107,124,.18);color:var(--ng)}
+.qtext{font-size:clamp(17px,2.6vw,20px);font-weight:700;line-height:1.6;margin:10px 0 0;text-wrap:pretty}
+.timer{position:absolute;left:0;bottom:0;height:3px;background:var(--glow);border-radius:0 0 0 10px;width:100%;transform-origin:left;}
+.choices{display:grid;gap:10px}
+.choice{display:grid;grid-template-columns:28px 1fr;gap:10px;align-items:center;text-align:left;padding:14px;border-radius:8px;border:1px solid var(--line);background:rgba(14,32,48,.7);font-size:15px;transition:transform .08s,border-color .15s}
+.choice:hover:not([disabled]){border-color:var(--glow);transform:translateX(3px)}
+.choice .k{font-family:var(--f-mono);font-size:12px;width:24px;height:24px;display:grid;place-items:center;border-radius:4px;border:1px solid var(--line);color:var(--bone-dim)}
+.choice.ok{border-color:var(--ok);background:rgba(69,224,174,.14)}
+.choice.ok .k{background:var(--ok);color:#03130d;border-color:var(--ok)}
+.choice.ng{border-color:var(--ng);background:rgba(255,107,124,.12);animation:shake .35s}
+.choice[disabled]{cursor:default}
+@keyframes shake{25%{transform:translateX(-6px)}50%{transform:translateX(5px)}75%{transform:translateX(-3px)}}
+.fb{display:flex;flex-direction:column;gap:10px;padding:16px;border-radius:10px;border:1px solid var(--line);background:rgba(14,32,48,.8);animation:rise .3s ease-out}
+@keyframes rise{from{transform:translateY(8px);opacity:.4}}
+.fb .verdict{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.fb .verdict b{font-family:var(--f-display);font-weight:400;font-size:20px}
+.fb .verdict b.ok{color:var(--ok)}.fb .verdict b.ng{color:var(--ng)}
+.gain{font-family:var(--f-mono);font-weight:700;color:var(--amber)}
+.fb p{margin:0}
+.analogy{border-left:3px solid var(--amber);padding:8px 12px;background:rgba(255,181,71,.07);border-radius:0 6px 6px 0;font-size:14px}
+.analogy span{display:block;font-size:11px;letter-spacing:.14em;color:var(--amber);font-weight:700}
+.next{align-self:flex-end;background:var(--glow);color:#04121d;border:0;border-radius:8px;padding:10px 18px;font-weight:700}
+.quit{background:none;border:0;color:var(--bone-dim);font-size:13px;padding:0}
+.float{position:fixed;pointer-events:none;font-family:var(--f-display);color:var(--amber);font-size:22px;z-index:20;animation:floatup 1s ease-out forwards;text-shadow:0 0 12px rgba(255,181,71,.6)}
+@keyframes floatup{to{transform:translateY(-60px);opacity:0}}
+
+/* Result */
+.result{max-width:560px;width:100%;margin:0 auto;display:flex;flex-direction:column;gap:14px;text-align:center}
+.result h2{font-family:var(--f-display);font-weight:400;font-size:clamp(26px,6vw,36px);margin:6px 0 0}
+.bigscore{font-family:var(--f-mono);font-size:56px;font-weight:700;line-height:1;color:var(--glow)}
+.rgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.rgrid div{padding:12px 6px;border:1px solid var(--line);border-radius:8px;background:rgba(14,32,48,.6)}
+.rgrid b{display:block;font-family:var(--f-mono);font-size:22px;color:var(--amber)}
+.rgrid small{color:var(--bone-dim);font-size:12px}
+.newcards{display:flex;flex-direction:column;gap:8px;text-align:left}
+.lvup{padding:14px;border-radius:10px;background:linear-gradient(135deg,rgba(255,181,71,.25),rgba(143,211,255,.12));border:1px solid var(--amber);font-weight:700}
+.row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.ghost{background:none;border:1px solid var(--line);border-radius:8px;padding:12px 18px;font-weight:700}
+
+/* Deck */
+.deck{display:flex;flex-direction:column;gap:14px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
+.card{padding:14px;border-radius:8px;border:1px solid var(--line);background:rgba(14,32,48,.7);display:flex;flex-direction:column;gap:6px;min-width:0}
+.card .rg{font-family:var(--f-mono);font-size:10px;color:var(--glow);letter-spacing:.1em}
+.card .t{font-weight:700}
+.card p{margin:0;font-size:13px;color:var(--bone)}
+.card.locked{opacity:.4;border-style:dashed}
+.card.locked .t{filter:blur(4px)}
+
+canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:30;width:100%;height:100%}
+
+@media (max-width:760px){
+  .home{grid-template-columns:1fr}
+  .film{max-width:340px;margin:0 auto;width:100%}
+  .hud{grid-template-columns:1fr}
+  .stats{justify-content:flex-start}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation:none!important;transition:none!important}
+}
+</style>
+
+<canvas id="fx"></canvas>
+<div class="wrap">
+  <header class="hud">
+    <div class="brand">
+      <small>Orthopaedic Lightbox · 1日3分</small>
+      <h1>整形外科シャウカステン</h1>
+    </div>
+    <div class="stats">
+      <span class="chip" title="連続学習日数"><span class="flame">●</span><b id="streak">0</b>日連続</span>
+      <span class="chip" title="最高コンボ">最高<b id="best">0</b>コンボ</span>
+      <button class="iconbtn" id="sound" aria-pressed="true">音 ON</button>
+    </div>
+    <div class="lvl" style="grid-column:1/-1">
+      <span>Lv.<b class="mono" id="lv">1</b> <span class="title" id="lvTitle">研修医1年目</span></span>
+      <div class="bar"><i id="xpbar"></i></div>
+      <span class="mono" id="xptext">0 / 60 XP</span>
+    </div>
+  </header>
+  <main id="view"></main>
+  <p class="note">学習用の要点まとめです。実際の診療判断は最新のガイドラインと施設の方針に従ってください。進捗はこのブラウザにだけ保存されます。</p>
+</div>
+
+<script>
+const REG={
+  shoulder:{nm:"肩",lt:"ARTICULATIO HUMERI",x:58,y:96},
+  elbow:{nm:"肘",lt:"ARTICULATIO CUBITI",x:47,y:160},
+  hand:{nm:"手・手関節",lt:"MANUS / CARPUS",x:38,y:222},
+  spine:{nm:"脊椎",lt:"COLUMNA VERTEBRALIS",x:100,y:172},
+  hip:{nm:"股関節",lt:"ARTICULATIO COXAE",x:80,y:222},
+  knee:{nm:"膝",lt:"ARTICULATIO GENUS",x:80,y:298},
+  foot:{nm:"足・足関節",lt:"PES / TALOCRURALIS",x:80,y:372},
+  trauma:{nm:"外傷総論",lt:"TRAUMATOLOGIA",x:168,y:66}
+};
+const Q=[
+// 肩
+{id:"s1",r:"shoulder",t:"ローテーターカフ",q:"回旋筋腱板（ローテーターカフ）を構成しない筋はどれ？",c:["大円筋","棘上筋","棘下筋","肩甲下筋"],ex:"腱板は棘上筋・棘下筋・小円筋・肩甲下筋の4つ（頭文字でSITS）。大円筋は腱板に含まれません。名前が「小円筋」と似ているのでひっかけに使われやすいところです。",an:"上腕骨頭というボールを、浅いお皿（関節窩）に押さえつけておく「4本の指」。1本でも力が抜けるとボールがぐらつきます。"},
+{id:"s2",r:"shoulder",t:"腱板断裂の好発",q:"腱板断裂で最も断裂しやすい腱は？",c:["棘上筋腱","肩甲下筋腱","小円筋腱","上腕二頭筋長頭腱"],ex:"棘上筋腱は肩峰と上腕骨頭のすき間（肩峰下）を通るため、挟まれて擦れやすく、断裂の大半はここから始まります。",an:"狭い門の下を毎日くぐるロープ。腕を上げるたびに門の角でこすれ、少しずつほつれていきます。"},
+{id:"s3",r:"shoulder",t:"肩関節脱臼の方向",q:"肩関節脱臼で最も多い方向は？",c:["前方","後方","下方","上方"],ex:"肩関節脱臼の9割以上が前方脱臼。外転・外旋位で腕を後ろに持っていかれる受傷が典型です。後方脱臼はけいれん発作や電撃傷で起こりやすく、見逃されやすいので注意。",an:"ゴルフティーの上のボール。お皿が浅いので、前に押されると簡単に転がり落ちます。"},
+{id:"s4",r:"shoulder",t:"Hill-Sachs損傷",q:"肩関節前方脱臼のときに上腕骨頭の後外側にできる陥没骨折は？",c:["Hill-Sachs損傷","Bankart損傷","SLAP損傷","Bennett骨折"],ex:"Hill-Sachs損傷は上腕骨頭側、Bankart損傷は関節窩前下縁の関節唇（骨性なら骨性Bankart）側の損傷。前方脱臼ではこの2つがペアで起こりやすく、反復性脱臼の原因になります。",an:"ドアの枠（関節窩）とドア本体（骨頭）が勢いよくぶつかると、両方にへこみができる。骨頭側のへこみがHill-Sachs、枠側の欠けがBankart。"},
+{id:"s5",r:"shoulder",t:"凍結肩の経過",q:"凍結肩（いわゆる五十肩）の病期の順番として正しいのは？",c:["疼痛期 → 拘縮期 → 回復期","拘縮期 → 疼痛期 → 回復期","回復期 → 疼痛期 → 拘縮期","疼痛期 → 回復期 → 拘縮期"],ex:"痛みが強い時期（freezing）、痛みは和らぐが動かない時期（frozen）、徐々に動きが戻る時期（thawing）の順。全体で1〜2年かかることもあり、時期に合わせて安静とストレッチの比重を変えます。",an:"水が凍っていく → 完全に凍る → 溶けていく。英語名 frozen shoulder の通り、季節のように順番に進みます。"},
+// 肘
+{id:"e1",r:"elbow",t:"テニス肘",q:"上腕骨外側上顆炎（テニス肘）で主に障害される腱は？",c:["短橈側手根伸筋腱","長母指屈筋腱","上腕三頭筋腱","尺側手根屈筋腱"],ex:"短橈側手根伸筋（ECRB）の起始部の変性が主体。手首を反らす動作で痛み、Thomsenテストなどで誘発されます。テニスより、日常の物を持ち上げる動作で起こることのほうが多い病気です。",an:"手首を反らすたびに、肘の外側の一点にフックで引っ張られる力がかかる。毎日続けるとフックの付け根がほつれます。"},
+{id:"e2",r:"elbow",t:"小児肘の骨折",q:"小児の肘周辺骨折で最も多いのは？",c:["上腕骨顆上骨折","肘頭骨折","橈骨頭骨折","上腕骨内側上顆骨折"],ex:"手を伸ばして転んだときの上腕骨顆上骨折が最多。上腕動脈・正中神経の損傷、Volkmann拘縮（コンパートメント症候群の結果）、後遺症の内反肘に注意します。",an:"小児の顆上部は、骨が薄く平たい「くびれ」。てこの力がかかると真っ先にここが折れます。"},
+{id:"e3",r:"elbow",t:"肘内障",q:"肘内障の典型的な受傷のきっかけは？",c:["子どもの手を急に引っ張った","肘を強く打った","鉄棒から落ちた","ボールを投げすぎた"],ex:"2〜4歳前後に多く、腕を引っ張られて橈骨頭が輪状靱帯から抜けかける（亜脱臼）状態。腕を下げたまま動かさなくなります。回外・屈曲などの整復操作で「コクッ」と戻ることが多いです。",an:"子どもの橈骨頭はまだ小さく、輪ゴム（輪状靱帯）の中から引っ張るとスポッと抜けかける。"},
+{id:"e4",r:"elbow",t:"肘部管症候群",q:"肘部管症候群で障害される神経は？",c:["尺骨神経","正中神経","橈骨神経","筋皮神経"],ex:"肘の内側で尺骨神経が圧迫されます。小指と環指の小指側のしびれ、骨間筋の萎縮、Froment徴候などが特徴です。",an:"肘をぶつけて小指まで電気が走る「ファニーボーン」。あそこを通っている神経が尺骨神経です。"},
+// 手
+{id:"h1",r:"hand",t:"手根管症候群",q:"手根管症候群で障害される神経は？",c:["正中神経","尺骨神経","橈骨神経","後骨間神経"],ex:"母指〜環指の母指側のしびれ、夜間や明け方の増悪、母指球の萎縮（猿手）。Phalenテスト、Tinel徴候で評価します。妊娠・透析・甲状腺機能低下症なども要因になります。",an:"手首のトンネル（手根管）に、腱9本と神経1本がぎゅうぎゅう詰め。むくむと一番弱い神経が押しつぶされます。"},
+{id:"h2",r:"hand",t:"Colles骨折",q:"高齢者が手をついて転倒。橈骨遠位端で遠位骨片が背側に転位する骨折は？",c:["Colles骨折","Smith骨折","Barton骨折","Galeazzi骨折"],ex:"背側転位がColles骨折、掌側転位がSmith骨折。骨粗鬆症を背景にした代表的な脆弱性骨折で、今後の大腿骨近位部骨折のリスクのサインでもあります。",an:"横から見ると、伏せたフォーク（ディナーフォーク変形）。「手をついたらフォーク」と覚えます。"},
+{id:"h3",r:"hand",t:"舟状骨骨折",q:"舟状骨骨折で特に問題になる合併症は？",c:["偽関節・骨壊死","手根管症候群","ばね指","デュピュイトラン拘縮"],ex:"舟状骨の血流は遠位から近位へ入るため、腰部〜近位で折れると近位骨片が栄養を失いやすい。初回X線で写らないこともあるので、嗅ぎタバコ窩の圧痛があれば骨折として扱い、MRIなどで確認します。",an:"水道管が下流から上流に向かって流れている家。途中で管が切れると、奥の部屋（近位）だけ水が止まります。"},
+{id:"h4",r:"hand",t:"ドケルバン病",q:"ドケルバン病（狭窄性腱鞘炎）で障害される腱は？",c:["長母指外転筋腱と短母指伸筋腱","長母指伸筋腱","示指伸筋腱","長母指屈筋腱"],ex:"手背の第1区画を通る長母指外転筋（APL）と短母指伸筋（EPB）。母指を握り込んで尺屈すると痛むFinkelsteinテスト（日本ではEichhoffテストとして知られる手技）が有名です。育児中や手をよく使う人に多い病気です。",an:"親指の付け根のトンネルを2本のロープが通る。抱っこやスマホで擦れ続けると、トンネルの壁が厚くなって引っかかります。"},
+{id:"h5",r:"hand",t:"ばね指",q:"ばね指で引っかかりが起きている場所は？",c:["屈筋腱とA1滑車（腱鞘）","伸筋腱と中央索","掌側板","側副靱帯"],ex:"中手骨頭の掌側にあるA1滑車で、屈筋腱が肥厚した腱鞘に引っかかります。指を伸ばすときにカクンと弾発するのが特徴。保存療法で改善しなければ腱鞘内注射や腱鞘切開を行います。",an:"上着のファスナーに布が噛んだ状態。引っ張るとカクンと急に動きます。"},
+// 脊椎
+{id:"p1",r:"spine",t:"ヘルニアの好発高位",q:"腰椎椎間板ヘルニアで最も多い高位は？",c:["L4/5","L1/2","L2/3","Th12/L1"],ex:"L4/5とL5/S1で大部分を占めます。腰椎の中でも動きが大きく、負担が集中する場所です。",an:"本棚の一番下の段ほど重さがかかってたわむ。背骨でも下の方のクッションが先につぶれます。"},
+{id:"p2",r:"spine",t:"障害される神経根",q:"L4/5椎間板の後外側ヘルニアで主に障害される神経根は？",c:["L5","L4","S1","L3"],ex:"後外側型では、その椎間を通過して下へ向かう神経根（L4/5ならL5）が圧迫されます。L5障害では母趾の背屈力低下、下腿外側〜足背のしびれ。外側型（椎間孔部）なら1つ上のL4が障害されます。",an:"エレベーターの扉の前で待っている人（次の階に降りる神経根）が、はみ出た荷物にぶつかる。"},
+{id:"p3",r:"spine",t:"脊柱管狭窄症",q:"腰部脊柱管狭窄症の神経性間欠跛行に特徴的なのは？",c:["前かがみで休むと楽になる","立ち止まるだけですぐ治る","夜間安静時に最も痛い","上を向くと楽になる"],ex:"腰を反らすと脊柱管が狭くなり、前かがみで広がります。自転車はこげる、カートを押すと歩ける、が典型。立ち止まるだけで治るなら閉塞性動脈硬化症など血管性跛行を疑います。",an:"前かがみになるとトンネルが広がり、反ると狭くなる。ストローを曲げると中がつぶれる感じの逆です。"},
+{id:"p4",r:"spine",t:"脆弱性骨折",q:"骨粗鬆症による骨折で最も頻度が高いのは？",c:["椎体骨折","大腿骨近位部骨折","橈骨遠位端骨折","上腕骨近位端骨折"],ex:"椎体骨折が最多で、そのうち多くは痛みが軽く自覚されない「いつの間にか骨折」。身長が縮む、背中が丸くなるのがサインです。1つ折れると次の骨折リスクが大きく上がります。",an:"スポンジのような椎体は、中身がスカスカになると重さだけで少しずつつぶれていく。"},
+{id:"p5",r:"spine",t:"馬尾症候群",q:"腰痛患者で、緊急の対応が必要な所見はどれ？",c:["膀胱直腸障害とサドル型の感覚低下","朝のこわばり","前屈時の痛み","長時間座った後の痛み"],ex:"馬尾症候群を疑う所見で、緊急の画像検査と除圧手術の検討が必要です。発熱、がんの既往、外傷、体重減少などとあわせて「レッドフラッグ」として覚えます。",an:"背骨の下の端は、膀胱とお尻を担当するケーブルの束（馬の尻尾）。ここが圧迫されると、排尿と自転車のサドルが当たる部分の感覚が失われます。"},
+// 股関節
+{id:"x1",r:"hip",t:"頸部骨折の手術",q:"高齢者の転位型大腿骨頸部骨折（Garden III・IV）で一般的に選ばれる手術は？",c:["人工骨頭置換術","スクリューによる骨接合術","保存療法","骨切り術"],ex:"転位すると骨頭への血流が途絶え、骨頭壊死・偽関節のリスクが高くなるため、高齢者では人工骨頭（活動性が高ければ人工股関節全置換術）を選ぶことが多いです。非転位型（Garden I・II）は骨接合が基本です。",an:"根元が切れて水が届かなくなった植木。接ぎ木するより、新しい鉢に植え替えたほうが確実です。"},
+{id:"x2",r:"hip",t:"大腿骨頭壊死",q:"特発性大腿骨頭壊死症の代表的な危険因子は？",c:["ステロイド投与と多量飲酒","低身長","喫煙のみ","若年女性であること"],ex:"ステロイド関連とアルコール関連が二大要因。大腿骨頭は血流の予備が少なく、虚血に弱い場所です。",an:"細い1本の道路にだけ頼っている山奥の村。道がふさがると、すぐに物資が届かなくなります。"},
+{id:"x3",r:"hip",t:"DDHのチェック",q:"乳児の発育性股関節形成不全（DDH）の健診で特に重要な所見は？",c:["開排制限","Lachmanテスト陽性","Phalenテスト陽性","Spurlingテスト陽性"],ex:"股関節を開いたときの開排制限、大腿や鼠径部のしわの左右差、家族歴、女児、骨盤位分娩が要チェック項目。抱っこは脚がM字に開く形が推奨されます。",an:"カエルのように脚を開けるのが赤ちゃんの普通。片方だけ開きにくいのは、ボールがお皿からずれているサインです。"},
+{id:"x4",r:"hip",t:"大腿骨頭すべり症",q:"肥満傾向の思春期男子が「膝が痛い」と受診。見逃してはいけないのは？",c:["大腿骨頭すべり症","Osgood-Schlatter病","半月板損傷","成長痛"],ex:"股関節疾患は膝への関連痛として現れることがあります。大腿骨頭すべり症では股関節の内旋制限、屈曲すると外旋するDrehmann徴候がヒント。膝が痛いなら股関節も診る、が鉄則です。",an:"家のブレーカー（股関節）が原因なのに、別の部屋（膝）の電気がつかない。症状の場所と原因の場所はずれることがあります。"},
+// 膝
+{id:"k1",r:"knee",t:"Lachmanテスト",q:"前十字靱帯（ACL）損傷の徒手検査で最も感度が高いとされるのは？",c:["Lachmanテスト","McMurrayテスト","外反ストレステスト","後方引き出しテスト"],ex:"膝軽度屈曲位で脛骨を前方に引き出し、終点（エンドポイント）の有無をみます。McMurrayは半月板、後方引き出しは後十字靱帯（PCL）の検査です。",an:"シートベルトを軽く引いてみる検査。正常なら「カチッ」と止まるが、切れていると止まらずにスーッと出てきます。"},
+{id:"k2",r:"knee",t:"Unhappy triad",q:"古典的な「unhappy triad（O'Donoghueの三徴）」に含まれないのは？",c:["後十字靱帯","前十字靱帯","内側側副靱帯","内側半月板"],ex:"古典的にはACL・MCL・内側半月板の同時損傷。ただし急性期の実際の調査では外側半月板の損傷のほうが多いとする報告もあります。",an:"外から膝を内側に倒されると、内側の支え（MCL）、真ん中の芯（ACL）、内側のクッションが連鎖して壊れます。"},
+{id:"k3",r:"knee",t:"半月板損傷",q:"半月板損傷に特徴的な症状は？",c:["ロッキング（引っかかって伸びない）","朝のこわばりが1時間以上","発熱","ふくらはぎのしびれ"],ex:"ちぎれた半月板が関節に挟まり、膝が伸びなくなるロッキングや引っかかり感が特徴。McMurrayテスト、関節裂隙の圧痛で評価し、MRIで確認します。",an:"ドアの蝶番に紙片が挟まると、ドアが途中で止まって閉まらない。"},
+{id:"k4",r:"knee",t:"Osgood-Schlatter病",q:"Osgood-Schlatter病で圧痛と隆起がみられる部位は？",c:["脛骨粗面","膝蓋骨下極","大腿骨内側顆","腓骨頭"],ex:"成長期のスポーツ選手で、膝蓋腱が脛骨粗面の成長軟骨を繰り返し引っ張って起こります。膝蓋骨の下極ならSinding-Larsen-Johansson病です。",an:"まだ柔らかい釘の打ち込み口を、太いロープが毎日引っ張る。打ち込み口が盛り上がって痛くなります。"},
+{id:"k5",r:"knee",t:"変形性膝関節症",q:"日本人の変形性膝関節症で多い変形は？",c:["内反膝（O脚）による内側型","外反膝（X脚）による外側型","膝蓋大腿関節のみ","変形はほぼ起こらない"],ex:"日本人では内反変形と内側関節裂隙の狭小化が多く、体重が内側に集中する悪循環になります。運動療法と減量が基本で、進行すれば高位脛骨骨切り術や人工膝関節を検討します。",an:"片側だけすり減った靴のかかと。すり減るほど傾き、傾くほどさらにすり減ります。"},
+// 足
+{id:"f1",r:"foot",t:"内反捻挫",q:"足関節の内反捻挫で最も損傷されやすい靱帯は？",c:["前距腓靱帯","三角靱帯","踵腓靱帯のみ","後脛腓靱帯"],ex:"前距腓靱帯（ATFL）が最初に傷み、重くなると踵腓靱帯も加わります。「ただの捻挫」でも不十分な治療で慢性不安定症になることがあります。",an:"足首の外側にある一番細い1本のロープ。足裏を内に返すと、真っ先にこれが引き伸ばされます。"},
+{id:"f2",r:"foot",t:"アキレス腱断裂",q:"アキレス腱断裂の診断に用いる検査は？",c:["Thompsonテスト","Phalenテスト","Patrickテスト","Lasègueテスト"],ex:"腹臥位でふくらはぎを握り、足関節が底屈しなければ陽性。断裂していても足趾の筋で多少は底屈できるので、「つま先立ちができるから大丈夫」は危険です。",an:"ふくらはぎ（巻き上げ機）を回してもロープが切れていれば、かかと（荷物）は持ち上がりません。"},
+{id:"f3",r:"foot",t:"Ottawa ankle rules",q:"Ottawa ankle rulesでX線撮影が推奨されるのはどれ？",c:["受傷直後も診察時も4歩の荷重歩行ができない","腫れが少しでもある","痛みの自覚がある","受傷から24時間以内である"],ex:"内果・外果の後縁または先端から6cmの骨の圧痛、もしくは受傷直後と診察時のどちらでも4歩歩けない場合に撮影します。不要なX線を減らしつつ、骨折を見逃しにくくするルールです。",an:"空港の保安検査のように、全員をX線に通すのではなく、条件に当てはまる人だけを通す仕組み。"},
+{id:"f4",r:"foot",t:"外反母趾",q:"日本の診療ガイドラインで外反母趾と判定する外反母趾角（HV角）の目安は？",c:["20°以上","5°以上","10°以上","45°以上"],ex:"HV角20°以上を外反母趾とし、30°以上で中等度、40°以上で重度とする分類が一般的。靴の指導、足趾の運動、装具が初期対応です。",an:"まっすぐ並んだ指の列が、つま先の細い靴に押されて一斉に小指側へ傾いていく。"},
+// 外傷
+{id:"t1",r:"trauma",t:"コンパートメント症候群",q:"コンパートメント症候群で最も早く出る、重要な所見は？",c:["見た目に比べて強すぎる痛み・他動伸展時の痛み","脈が触れない","皮膚が蒼白になる","完全な麻痺"],ex:"脈拍消失や麻痺は進行してからの所見で、待っていると手遅れになります。痛みの訴えが傷の程度に合わない、指趾を他動的に伸ばすと激痛、が早期のサイン。疑えば筋区画内圧を測定し、筋膜切開を検討します。",an:"中身が膨らみ続ける密閉袋。袋が破れる（麻痺）より前に、「パンパンで痛い」が最初の警報です。"},
+{id:"t2",r:"trauma",t:"脂肪塞栓症候群",q:"長管骨骨折の24〜72時間後に起こる脂肪塞栓症候群の三徴に含まれないのは？",c:["徐脈","呼吸不全","意識障害","点状出血"],ex:"三徴は呼吸不全・意識障害（中枢神経症状）・点状出血（胸部、腋窩、結膜など）。大腿骨骨折などの後に注意し、早期固定が予防になります。",an:"骨髄の脂肪が血流に乗って小さな配管に詰まる。肺、脳、皮膚の毛細血管という一番細い管から症状が出ます。"},
+{id:"t3",r:"trauma",t:"Salter-Harris分類",q:"小児の骨端線（成長軟骨板）損傷の分類として使われるのは？",c:["Salter-Harris分類","Garden分類","Gustilo分類","Neer分類"],ex:"I〜V型に分け、型が進むほど成長障害のリスクが高くなります。Gardenは大腿骨頸部骨折、Gustiloは開放骨折、Neerは上腕骨近位端骨折の分類です。",an:"骨の「成長工場」の損傷を、工場のどこにひびが入ったかで5段階に分けた地図。"},
+{id:"t4",r:"trauma",t:"骨癒合の過程",q:"骨折治癒の過程として正しい順番は？",c:["炎症期 → 修復期（仮骨形成） → リモデリング期","修復期 → 炎症期 → リモデリング期","リモデリング期 → 炎症期 → 修復期","炎症期 → リモデリング期 → 修復期"],ex:"血腫と炎症で材料を集め、仮骨でつなぎ、何か月もかけて力のかかる方向に合わせて作り直します。喫煙、糖尿病、不安定な固定は癒合を遅らせます。",an:"道路工事と同じ。現場を囲って資材を運び込み、仮の道を通し、最後に本舗装に作り替えます。"},
+{id:"t5",r:"trauma",t:"開放骨折の初期対応",q:"開放骨折の初期対応で特に重要なのは？",c:["早期の抗菌薬投与と洗浄・デブリドマン","まず創を縫って閉じる","受傷部を温める","抗菌薬は培養結果を待ってから"],ex:"感染予防が最優先。できるだけ早く抗菌薬を投与し、破傷風予防も確認したうえで、十分な洗浄と壊死組織の除去を行います。重症度はGustilo分類で評価します。",an:"骨という家の玄関が開けっぱなしになった状態。泥棒（細菌）が入る前に、すぐ警備（抗菌薬）と掃除を始めます。"}
+];
+const BYID=Object.fromEntries(Q.map(q=>[q.id,q]));
+const TITLES=["研修医1年目","研修医2年目","専攻医","整形外科専門医","脊椎・関節の目利き","指導医","部長","教授","名誉教授","骨の賢者"];
+const INTERVAL=[0,1,3,7,14,30];
+const DAILY_GOAL=10, SESSION_N=5;
+
+const KEY="ortho-lightbox-v1";
+function today(){const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
+function addDays(s,n){const d=new Date(s+"T00:00:00");d.setDate(d.getDate()+n);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
+let S={xp:0,streak:0,lastDay:null,todayDate:today(),todayCount:0,box:{},cards:{},best:0,sound:true};
+try{const raw=localStorage.getItem(KEY);if(raw)S=Object.assign(S,JSON.parse(raw))}catch(e){}
+if(S.todayDate!==today()){S.todayDate=today();S.todayCount=0}
+if(S.lastDay&&S.lastDay!==today()&&S.lastDay!==addDays(today(),-1))S.streak=0;
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+
+function lvInfo(xp){let lv=1,need=60,acc=0;while(xp>=acc+need){acc+=need;lv++;need=60+lv*30}return{lv,cur:xp-acc,need,title:TITLES[Math.min(lv-1,TITLES.length-1)]}}
+function mastery(r){const qs=Q.filter(q=>q.r===r);return qs.reduce((a,q)=>a+Math.min((S.box[q.id]?.b||0),3)/3,0)/qs.length}
+function dueList(){const t=today();return Q.filter(q=>S.box[q.id]&&S.box[q.id].b===0&&S.box[q.id].due<=t)}
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+const $=s=>document.querySelector(s);
+const esc=s=>s.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+/* sound */
+let AC=null;
+function tone(fs,dur=.09,type="triangle",gap=.07){if(!S.sound)return;try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();const t0=AC.currentTime;fs.forEach((f,i)=>{const o=AC.createOscillator(),g=AC.createGain();o.type=type;o.frequency.value=f;g.gain.setValueAtTime(.0001,t0+i*gap);g.gain.exponentialRampToValueAtTime(.18,t0+i*gap+.01);g.gain.exponentialRampToValueAtTime(.0001,t0+i*gap+dur);o.connect(g).connect(AC.destination);o.start(t0+i*gap);o.stop(t0+i*gap+dur+.02)})}catch(e){}}
+const SFX={ok:c=>tone([660,880,1100+Math.min(c,8)*60]),ng:()=>tone([220,160],.16,"sawtooth",.1),lv:()=>tone([523,659,784,1046,1318],.14,"triangle",.09),card:()=>tone([988,1319],.12,"sine",.08)};
+
+/* fx */
+const cv=$("#fx"),cx=cv.getContext("2d");let parts=[];
+function burst(n=90){if(matchMedia("(prefers-reduced-motion: reduce)").matches)return;cv.width=innerWidth;cv.height=innerHeight;const cols=["#ffb547","#8fd3ff","#45e0ae","#dcefff"];for(let i=0;i<n;i++)parts.push({x:innerWidth/2,y:innerHeight*.35,vx:(Math.random()-.5)*12,vy:Math.random()*-11-2,l:60+Math.random()*40,c:cols[i%4],s:3+Math.random()*4});if(parts.length===n)requestAnimationFrame(tick)}
+function tick(){cx.clearRect(0,0,cv.width,cv.height);parts.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.vy+=.35;p.l--;cx.fillStyle=p.c;cx.globalAlpha=Math.max(p.l/80,0);cx.fillRect(p.x,p.y,p.s,p.s*1.6)});parts=parts.filter(p=>p.l>0);if(parts.length)requestAnimationFrame(tick);else cx.clearRect(0,0,cv.width,cv.height)}
+function floatText(txt,el){const r=el.getBoundingClientRect();const f=document.createElement("div");f.className="float";f.textContent=txt;f.style.left=(r.left+r.width-90)+"px";f.style.top=(r.top-6)+"px";document.body.appendChild(f);setTimeout(()=>f.remove(),1000)}
+
+/* HUD */
+function hud(){const L=lvInfo(S.xp);$("#lv").textContent=L.lv;$("#lvTitle").textContent=L.title;$("#xptext").textContent=L.cur+" / "+L.need+" XP";$("#xpbar").style.width=(L.cur/L.need*100)+"%";$("#streak").textContent=S.streak;$("#best").textContent=S.best;const sb=$("#sound");sb.textContent=S.sound?"音 ON":"音 OFF";sb.setAttribute("aria-pressed",S.sound)}
+$("#sound").onclick=()=>{S.sound=!S.sound;save();hud()};
+
+/* skeleton */
+function skeleton(){
+  const glow=r=>{const m=mastery(r);return `stroke:rgba(220,239,255,${.35+m*.65});filter:${m>0?`drop-shadow(0 0 ${2+m*6}px rgba(143,211,255,${.3+m*.6}))`:"none"}`};
+  const half=`
+   <g style="${glow('shoulder')}"><path class="bone" d="M98 90 Q80 84 60 90"/><path class="bone solid" d="M60 90 Q50 100 58 128 L72 116 Q70 98 66 92Z"/><circle class="bone solid" cx="58" cy="97" r="7"/></g>
+   <g style="${glow('elbow')}"><path class="bone" d="M56 104 L49 156"/><path class="bone" d="M49 162 L41 214"/><path class="bone" d="M53 163 L47 215"/><circle class="bone solid" cx="49" cy="159" r="4.5"/></g>
+   <g style="${glow('hand')}"><path class="bone solid" d="M38 216 L50 217 L49 228 L37 227Z"/><path class="bone" d="M38 229 L34 248 M42 229 L40 252 M46 229 L46 252 M49 229 L51 248 M37 225 L30 238"/></g>
+   <g style="${glow('hip')}"><path class="bone solid" d="M98 206 Q76 196 70 212 Q72 232 92 236 Q98 228 98 218Z"/><circle class="bone solid" cx="81" cy="224" r="6"/></g>
+   <g style="${glow('knee')}"><path class="bone" d="M83 230 L81 290"/><ellipse class="bone solid" cx="81" cy="297" rx="7" ry="6"/><path class="bone" d="M80 304 L80 362"/><path class="bone" d="M88 306 L87 360"/></g>
+   <g style="${glow('foot')}"><path class="bone solid" d="M76 364 L90 364 L92 372 L78 376Z"/><path class="bone" d="M78 376 L64 384 M82 376 L68 388 M86 375 L74 390"/></g>`;
+  const hots=Object.entries(REG).filter(([k])=>k!=="trauma"&&k!=="spine").map(([k,v])=>hot(k,v)).join("")+hot("spine",REG.spine)+hot("trauma",REG.trauma);
+  return `<svg viewBox="0 0 200 400" role="img" aria-label="全身骨格のX線フィルム。関節をタップすると、その部位のステージが始まります">
+   <g style="${glow('spine')}">
+     <ellipse class="bone solid" cx="100" cy="38" rx="21" ry="25"/><path class="bone" d="M86 54 Q100 70 114 54"/>
+     ${Array.from({length:21},(_,i)=>`<rect class="bone solid" x="96" y="${68+i*7}" width="8" height="5" rx="1.5"/>`).join("")}
+     ${Array.from({length:6},(_,i)=>`<path class="bone" d="M96 ${100+i*10} Q${74-i} ${104+i*10} ${76+i*2} ${118+i*10}"/><path class="bone" d="M104 ${100+i*10} Q${126+i} ${104+i*10} ${124-i*2} ${118+i*10}"/>`).join("")}
+     <path class="bone solid" d="M94 212 L106 212 L104 232 L96 232Z"/>
+   </g>
+   ${half}
+   <g transform="translate(200 0) scale(-1 1)">${half}</g>
+   ${hots}
+  </svg>`;
+}
+function hot(k,v){const m=Math.round(mastery(k)*100);return `<g class="hot" tabindex="0" role="button" data-stage="${k}" aria-label="${v.nm}ステージ 習熟度${m}%"><circle class="ring" cx="${v.x}" cy="${v.y}" r="9"/><circle class="core" cx="${v.x}" cy="${v.y}" r="2.6"/><text x="${v.x+(k==='trauma'?-12:-10)}" y="${v.y-12}" ${k==='trauma'?'text-anchor="middle"':'text-anchor="end"'}>${v.nm}</text></g>`}
+
+/* views */
+function home(){
+  hud();
+  const cardsN=Object.keys(S.cards).length;const due=dueList();
+  const C=2*Math.PI*36, prog=Math.min(S.todayCount/DAILY_GOAL,1);
+  $("#view").innerHTML=`<section class="home">
+    <div class="film">${skeleton()}
+      <div class="overlay tl">ORTHO-LIGHTBOX<br>AP VIEW · STANDING</div>
+      <div class="overlay tr">kVp 70 · mAs 12<br>${today()}</div>
+      <div class="overlay bl">習熟度に応じて骨が光ります</div>
+      <div class="overlay br">R</div>
+    </div>
+    <div class="side">
+      <div class="daily">
+        <div class="ring"><svg viewBox="0 0 84 84"><circle cx="42" cy="42" r="36" fill="none" stroke="rgba(143,211,255,.15)" stroke-width="8"/><circle cx="42" cy="42" r="36" fill="none" stroke="var(--amber)" stroke-width="8" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${C*(1-prog)}" style="transition:stroke-dashoffset .8s"/></svg><div class="n">${S.todayCount}<small style="font-size:11px;color:var(--bone-dim)">/${DAILY_GOAL}</small></div></div>
+        <div>
+          <h2>${S.todayCount>=DAILY_GOAL?"今日の回診は完了":"今日の回診"}</h2>
+          <p>${S.todayCount>=DAILY_GOAL?"目標達成です。おかわりで最高コンボを狙えます。":"5問で約90秒。間違えた問題は、忘れかけた頃に再出題されます。"}</p>
+          <button class="cta" id="go">${S.todayCount>=DAILY_GOAL?"おかわり5問":"5問に挑戦"}</button>
+        </div>
+      </div>
+      ${due.length?`<div class="review"><span>復習待ちのカルテ <b class="mono">${due.length}</b> 件</span><button id="rev">復習する</button></div>`:""}
+      <div class="sec-h"><h3>部位別ステージ</h3><button id="deckbtn">例え話カード ${cardsN}/${Q.length}</button></div>
+      <div class="stages">${Object.entries(REG).map(([k,v])=>{const m=mastery(k),n=Q.filter(q=>q.r===k).length;return `<button class="stage" data-stage="${k}"><span class="nm">${v.nm}</span><span class="lt">${v.lt}</span><span class="bar"><i style="width:${m*100}%"></i></span><span class="meta"><span>${n}問</span><span>${Math.round(m*100)}%</span></span></button>`}).join("")}</div>
+    </div></section>`;
+  $("#go").onclick=()=>start(pickDaily(),"今日の回診");
+  if(due.length)$("#rev").onclick=()=>start(shuffle(due).slice(0,SESSION_N),"復習");
+  $("#deckbtn").onclick=deck;
+  document.querySelectorAll("[data-stage]").forEach(el=>{const go=()=>{const k=el.dataset.stage;start(pickStage(k),REG[k].nm)};el.onclick=go;el.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();go()}}});
+}
+function pickDaily(){const t=today();const due=shuffle(Q.filter(q=>S.box[q.id]&&S.box[q.id].due<=t));const fresh=shuffle(Q.filter(q=>!S.box[q.id]));const rest=shuffle(Q.filter(q=>S.box[q.id]&&S.box[q.id].due>t));return [...due,...fresh,...rest].slice(0,SESSION_N)}
+function pickStage(k){const qs=Q.filter(q=>q.r===k);qs.sort((a,b)=>(S.box[a.id]?.b??-1)-(S.box[b.id]?.b??-1)+Math.random()*.5-.25);return qs.slice(0,SESSION_N)}
+
+let G=null;
+function start(list,label){G={queue:list.map(q=>({q,retry:false})),label,i:0,results:[],combo:0,maxCombo:0,xp:0,newCards:[],lvBefore:lvInfo(S.xp).lv,retried:new Set()};ask()}
+function ask(){
+  const item=G.queue[G.i];const q=item.q;const rare=!item.retry&&Math.random()<.12;item.rare=rare;
+  const order=shuffle([0,1,2,3]);item.order=order;item.t0=performance.now();
+  const total=G.queue.length;
+  $("#view").innerHTML=`<section class="quiz">
+    <div class="qtop"><button class="quit" id="quit">← やめる</button><span class="pips">${G.queue.map((_,i)=>`<i class="${G.results[i]===true?"ok":G.results[i]===false?"ng":i===G.i?"now":""}"></i>`).join("")}</span><span class="mono">${G.i+1}/${total}</span></div>
+    <div class="combo" id="combo">${G.combo>=2?G.combo+" COMBO":""}</div>
+    <div class="qcard ${rare?"rare":""}">
+      <span class="tag">${REG[q.r].nm}</span>${rare?'<span class="tag rare">レア症例 XP×2</span>':""}${item.retry?'<span class="tag retry">リベンジ</span>':""}
+      <p class="qtext">${esc(q.q)}</p>
+      <div class="timer" id="timer"></div>
+    </div>
+    <div class="choices">${order.map((oi,i)=>`<button class="choice" data-oi="${oi}"><span class="k">${i+1}</span><span>${esc(q.c[oi])}</span></button>`).join("")}</div>
+    <div id="fbslot"></div></section>`;
+  const tm=$("#timer");tm.animate([{transform:"scaleX(1)"},{transform:"scaleX(0)"}],{duration:10000,fill:"forwards"});
+  $("#quit").onclick=()=>{G=null;home()};
+  document.querySelectorAll(".choice").forEach(b=>b.onclick=()=>answer(+b.dataset.oi,b));
+}
+function answer(oi,btn){
+  const item=G.queue[G.i];if(item.done)return;item.done=true;const q=item.q;const ok=oi===0;
+  const sec=(performance.now()-item.t0)/1000;$("#timer").getAnimations().forEach(a=>a.pause());
+  document.querySelectorAll(".choice").forEach(b=>{b.disabled=true;if(+b.dataset.oi===0)b.classList.add("ok")});
+  let gain=0,bits=[];
+  const bx=S.box[q.id]||{b:0,due:today()};
+  if(ok){
+    G.combo++;G.maxCombo=Math.max(G.maxCombo,G.combo);
+    gain=10;bits.push("正解 +10");
+    if(G.combo>=2){const cb=Math.min((G.combo-1)*3,15);gain+=cb;bits.push(`コンボ +${cb}`)}
+    if(sec<8){gain+=5;bits.push("即答 +5")}
+    if(item.rare){gain*=2;bits.push("レア ×2")}
+    if(item.retry)gain=Math.round(gain/2);
+    if(!item.retry){bx.b=Math.min(bx.b+1,5);bx.due=addDays(today(),INTERVAL[bx.b])}
+    if(!S.cards[q.id]){S.cards[q.id]=true;G.newCards.push(q);setTimeout(()=>SFX.card(),260)}
+    SFX.ok(G.combo);
+    const c=$("#combo");c.textContent=G.combo>=2?G.combo+" COMBO":"";c.classList.add("pop");setTimeout(()=>c.classList.remove("pop"),200);
+    floatText("+"+gain,btn);
+  }else{
+    btn.classList.add("ng");G.combo=0;bx.b=0;bx.due=today();SFX.ng();
+    if(!item.retry&&!G.retried.has(q.id)){G.retried.add(q.id);G.queue.push({q,retry:true})}
+  }
+  if(!item.retry)G.results[G.i]=ok;else G.results[G.i]=ok;
+  S.box[q.id]=bx;G.xp+=gain;S.xp+=gain;S.todayCount++;S.best=Math.max(S.best,G.maxCombo);
+  if(S.lastDay!==today()){S.streak=(S.lastDay===addDays(today(),-1))?S.streak+1:1;S.lastDay=today()}
+  save();hud();
+  $("#fbslot").innerHTML=`<div class="fb">
+    <div class="verdict"><b class="${ok?"ok":"ng"}">${ok?"正解":"惜しい"}</b><span class="gain">${ok?bits.join(" · "):(item.retry?"もう一度覚え直そう":"最後にリベンジ出題します")}</span></div>
+    <p>${esc(q.ex)}</p>
+    <div class="analogy"><span>例えるなら</span>${esc(q.an)}</div>
+    <button class="next" id="next">${G.i+1<G.queue.length?"次へ":"結果を見る"} <span class="mono" style="opacity:.6">Enter</span></button></div>`;
+  $("#next").onclick=next;$("#next").focus({preventScroll:true});
+  $("#fbslot").scrollIntoView({behavior:"smooth",block:"nearest"});
+}
+function next(){G.i++;if(G.i<G.queue.length)ask();else result()}
+function result(){
+  const first=G.results.slice(0,G.queue.filter(x=>!x.retry).length);const right=first.filter(Boolean).length;const n=first.length;
+  const perfect=right===n;let bonus=10+(perfect?20:0);S.xp+=bonus;G.xp+=bonus;save();
+  const L=lvInfo(S.xp);const up=L.lv>G.lvBefore;
+  hud();
+  $("#view").innerHTML=`<section class="result">
+    <span class="tag" style="align-self:center">${esc(G.label)}</span>
+    <h2>${perfect?"パーフェクト読影":right>=n-1?"良い読影でした":"復習で伸びます"}</h2>
+    <div class="bigscore">${right}<span style="font-size:24px;color:var(--bone-dim)">/${n}</span></div>
+    ${up?`<div class="lvup">レベルアップ　Lv.${L.lv}「${L.title}」になりました</div>`:""}
+    <div class="rgrid"><div><b>+${G.xp}</b><small>獲得XP</small></div><div><b>${G.maxCombo}</b><small>最大コンボ</small></div><div><b>${Math.min(S.todayCount,DAILY_GOAL)}/${DAILY_GOAL}</b><small>今日の目標</small></div></div>
+    <p class="note" style="margin:0">完走ボーナス +10${perfect?" ・ パーフェクト +20":""}</p>
+    ${G.newCards.length?`<div class="newcards"><div class="sec-h"><h3>新しい例え話カード ${G.newCards.length}枚</h3></div>${G.newCards.map(cardHTML).join("")}</div>`:""}
+    <div class="row"><button class="cta" id="again">もう5問</button><button class="ghost" id="back">フィルムに戻る</button></div>
+  </section>`;
+  if(up){SFX.lv();burst(140)}else if(perfect)burst(80);
+  $("#again").onclick=()=>start(pickDaily(),"今日の回診");$("#back").onclick=()=>{G=null;home()};
+}
+function cardHTML(q){return `<div class="card"><span class="rg">${REG[q.r].lt}</span><span class="t">${esc(q.t)}</span><p>${esc(q.an)}</p></div>`}
+function deck(){
+  hud();const n=Object.keys(S.cards).length;
+  $("#view").innerHTML=`<section class="deck"><div class="sec-h"><h3>例え話カード ${n}/${Q.length}</h3><button id="back">← フィルムに戻る</button></div>
+  <p class="note" style="margin:0">初めて正解するとカードが手に入ります。人に説明するときの「ひとこと」に使えます。</p>
+  ${Object.entries(REG).map(([k,v])=>`<div class="sec-h"><h3>${v.nm}</h3></div><div class="cards">${Q.filter(q=>q.r===k).map(q=>S.cards[q.id]?cardHTML(q):`<div class="card locked"><span class="rg">${v.lt}</span><span class="t">${esc(q.t)}</span><p>正解すると開きます</p></div>`).join("")}</div>`).join("")}
+  </section>`;
+  $("#back").onclick=home;
+}
+document.addEventListener("keydown",e=>{
+  if(!G||!$(".quiz"))return;
+  if(/^[1-4]$/.test(e.key)){const b=document.querySelectorAll(".choice")[+e.key-1];if(b&&!b.disabled)b.click()}
+  else if(e.key==="Enter"&&$("#next")&&document.activeElement!==$("#next")){e.preventDefault();next()}
+});
+home();
+</script>
